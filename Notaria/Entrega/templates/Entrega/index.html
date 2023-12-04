@@ -1,0 +1,246 @@
+{% extends "layouts/layout.html" %}
+
+{% block content %}
+
+{% load static %}
+<style>
+    /* Estilos para el modal */
+    #modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        justify-content: center;
+        align-items: center;
+    }
+    #camara {
+        width: 100%;
+        max-width: 640px;
+        height: auto;
+        display: none; /* Ocultar inicialmente */
+    }
+    #botonTomar {
+        background-color: #0f0;
+        color: #fff;
+        padding: 5px 10px;
+        cursor: pointer;
+        border: none;
+        border-radius: 5px;
+    }
+    #fotoMostrada {
+        max-width: 100%;
+        height: auto;
+        display: none; /* Ocultar inicialmente */
+    }
+    #botonesControl {
+        display: none; /* Ocultar inicialmente */
+        justify-content: space-between;
+        margin-top: 10px;
+    }
+    
+    #botonCerrar {
+        background-color: #f00;
+        color: #fff;
+        padding: 5px 10px;
+        cursor: pointer;
+        border: none;
+        border-radius: 5px;
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+    #botonVolver {
+        background-color: #f00;
+        color: #fff;
+        padding: 5px 10px;
+        cursor: pointer;
+        border: none;
+        border-radius: 5px;
+    }
+    #botonGuardar {
+        background-color: #0f0;
+        color: #fff;
+        padding: 5px 10px;
+        cursor: pointer;
+        border: none;
+        border-radius: 5px;
+    }
+</style>
+
+<!-- Book Us Start -->
+<div class="container-fluid contact py-6 wow bounceInUp" data-wow-delay="0.1s">
+    <div class="container">
+        <div class="row g-0">
+            <div class="col-1">
+                <img src="{% static 'img/NO1B.png'%}" class="img-fluid h-100 w-100 rounded-start" style="object-fit: cover; opacity: 0.7;" alt="">
+            </div>
+            <div class="col-10">
+                <div class="border-bottom border-top border-primary bg-light py-5 px-4">
+                    <div class="text-center">
+                        <small class="d-inline-block fw-bold text-dark text-uppercase bg-light border border-primary rounded-pill px-4 py-1 mb-3">ENTREGA</small>
+                        <h1 class="display-5 mb-5">Registro de Entrega de Escrituras</h1>
+                    </div>
+                    <div class="row g-4 form">
+                        <form method ="POST">
+                            {% csrf_token %}
+                            <div class="row g-4 form">
+                                <div class="col-lg-4 col-md-6">
+                                    <input type="text" class="form-control border-primary p-2" placeholder="Número de Escritura" name="id_escritura">
+                                </div>
+                                <div class="col-lg-4 col-md-6">
+                                    <input type="text" class="form-control border-primary p-2" placeholder="Cedula Registrada" name="cc_usuario">
+                                </div>
+                                <div class="col-lg-4 col-md-6">
+                                    <input type="date" class="form-control border-primary p-2" placeholder="Fecha de Entrega" name="fecha_entrega">
+                                </div>
+                                <div class="col-12 text-center">
+                                    <button type="submit" class="btn btn-primary px-5 py-3 rounded-pill" onclick="guardarEntrega()">Guardar</button>
+                                </div>
+                            </div>
+                        </form>
+
+                        
+                        <div class="col-12 text-center">
+                            <button type="camara" class="btn btn-primary px-5 py-3 rounded-pill" id="botonIniciarCamara" onclick="iniciarCamara()"> Camara </button>
+                        </div>
+                        <!-- Modal -->
+                        <div id="modal">
+                            <button id="botonCerrar" onclick="cerrarCamara()">Cerrar</button>
+                            <video id="camara"></video>
+                            <button id="botonTomar" onclick="tomarFoto()">Tomar Foto</button>
+                            <img id="fotoMostrada" src="" alt="Foto Capturada">
+                            <div id="botonesControl">
+                                <button id="botonVolver" onclick="volverATomar()">Tomar de Nuevo</button>
+                                <button id="botonGuardar" onclick="guardarFoto()">Guardar Foto</button>
+                            </div>
+                        </div>
+
+                        
+                        <script>
+                            
+                            var fotoActual;
+                            var stream;
+
+                            function iniciarCamara() {
+                                
+                                document.getElementById('modal').style.display = 'flex';
+
+                                
+                                var video = document.getElementById('camara');
+
+                                
+                                navigator.mediaDevices.getUserMedia({ video: true })
+                                    .then(function (mediaStream) {
+                                        // Almacenar el stream de video para cerrar la cámara después
+                                        stream = mediaStream;
+
+                                        // Mostrar el video en el elemento de video
+                                        video.srcObject = mediaStream;
+                                        video.play();
+                                        video.style.display = 'block';  // Mostrar el video después de asegurarse de que se está reproduciendo
+                                    })
+                                    .catch(function (error) {
+                                        console.error('Error al acceder a la cámara:', error);
+                                    });
+                            }
+
+                            function cerrarCamara() {
+                                // Detener el stream de video
+                                if (stream) {
+                                    stream.getTracks().forEach(track => track.stop());
+                                }
+
+                                // Ocultar la cámara y reiniciar la foto mostrada y los botones de control
+                                document.getElementById('camara').style.display = 'none';
+                                document.getElementById('fotoMostrada').style.display = 'none';
+                                document.getElementById('botonesControl').style.display = 'none';
+                                document.getElementById('fotoMostrada').src = '';
+
+                                // Ocultar el modal
+                                document.getElementById('modal').style.display = 'none';
+                            }
+
+                            function tomarFoto() {
+                                // Mostrar la foto tomada y los botones de control
+                                document.getElementById('fotoMostrada').style.display = 'block';
+                                document.getElementById('botonesControl').style.display = 'flex';
+
+                                // Capturar la foto sin cerrar la cámara
+                                var video = document.getElementById('camara');
+                                var canvas = document.createElement('canvas');
+                                canvas.width = video.videoWidth;
+                                canvas.height = video.videoHeight;
+                                var context = canvas.getContext('2d');
+                                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                                // Convertir la foto a base64
+                                fotoActual = canvas.toDataURL('image/jpeg');
+
+                                // Mostrar la foto capturada
+                                document.getElementById('fotoMostrada').src = fotoActual;
+
+                                // Ocultar la cámara
+                                video.style.display = 'none';
+                            }
+
+                            function volverATomar() {
+                                // Limpiar la vista previa y permitir tomar otra foto
+                                fotoActual = null;
+
+                                // Mostrar la cámara nuevamente y ocultar la foto mostrada y los botones de control
+                                document.getElementById('camara').style.display = 'block';
+                                document.getElementById('fotoMostrada').style.display = 'none';
+                                document.getElementById('botonesControl').style.display = 'none';
+                            }
+
+                            function dataURItoBlob(dataURI) {
+                                var byteString = atob(dataURI.split(',')[1]);
+                                var ab = new ArrayBuffer(byteString.length);
+                                var ia = new Uint8Array(ab);
+                                for (var i = 0; i < byteString.length; i++) {
+                                    ia[i] = byteString.charCodeAt(i);
+                                }
+                                return new Blob([ab], { type: 'image/jpeg' });
+                            }
+
+                            function guardarFoto() {
+                                // Mostrar la foto en algún lugar de la página (por ejemplo, en un elemento img)
+                                var fotoMostrada = document.getElementById('fotoMostrada');
+                                fotoMostrada.style.display = 'block';
+                                fotoMostrada.src = fotoActual;
+
+                                // Permitir que el usuario descargue la foto con el nombre deseado
+                                var numeroCedula = prompt('Ingresa el número de cédula:');
+                                var fecha = prompt('Ingresa la fecha (YYYY-MM-DD):');
+
+                                if (numeroCedula && fecha) {
+                                    // Crear un enlace temporal para descargar la foto
+                                    var enlace = document.createElement('a');
+                                    enlace.href = fotoActual;
+                                    enlace.download = numeroCedula + '_' + fecha + '.jpg';
+                                    enlace.click();
+                                } else {
+                                    alert('Por favor, ingresa el número de cédula y la fecha para guardar la foto.');
+                                }
+                            }
+
+                            function mostrarFotoEnOtroLugar(dataUri) {
+                                // Aquí puedes implementar cómo mostrar la foto en otro lugar, por ejemplo, en un contenedor en la página
+                                console.log('Mostrando foto en otro lugar:', dataUri);
+                            }
+                        </script>
+                    </div>
+                </div>
+            </div>
+            <div class="col-1">
+                <img src="{% static 'img/NO1B.png'%}" class="img-fluid h-100 w-100 rounded-end" style="object-fit: cover; opacity: 0.7;" alt="">
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Book Us End -->
+
+{% endblock %}
